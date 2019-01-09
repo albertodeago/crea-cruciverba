@@ -2,31 +2,34 @@
   <v-app>
     <v-toolbar app>
       <v-toolbar-title class="headline text-uppercase">
-        <span>Cruciverba</span>
+        <span>Crea cruciverba</span>
       </v-toolbar-title>
       <v-spacer></v-spacer>
       <v-btn
         flat
-        href="https://github.com/vuetifyjs/vuetify/releases/latest"
-        target="_blank"
       >
-        <span class="mr-2">Latest Release</span>
+        <span class="mr-2">Salva</span>
+      </v-btn>
+      <v-btn
+        flat
+      >
+        <span class="mr-2">Carica</span>
       </v-btn>
     </v-toolbar>
 
     <v-content>
-      <HelloWorld/>
+      <Main/>
     </v-content>
   </v-app>
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld'
+import Main from './components/Main'
 
 export default {
   name: 'App',
   components: {
-    HelloWorld
+    Main
   },
   data () {
     return {
@@ -35,3 +38,9 @@ export default {
   }
 }
 </script>
+
+<style>
+  .application {
+    
+  }
+</style>
