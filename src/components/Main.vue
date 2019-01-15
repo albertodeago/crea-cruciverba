@@ -27,7 +27,12 @@
             <span v-if="searchResults !== null">({{ searchResults.length }})</span>
           </div>
           <ul>
-            <li v-for="result in searchResults" :key="result">{{result}}</li>
+            <li v-for="result in searchResults" :key="result">
+              <span class="risultato">{{result}}</span>
+              <a target="_blank" :href="'https://www.google.com/search?q=significato+'+result">
+                <v-icon>search</v-icon>
+              </a>
+            </li>
           </ul>
         </v-layout>
       </v-flex>
@@ -51,10 +56,25 @@
                     }, 'cell-'+i+'-'+j]"
               >
                 <!-- {{ scheme[i][j] }} -->
+                <span :id="'cell-definition-'+i+'-'+j" class="cell-definition"></span>
+                <span :id="'cell-text-'+i+'-'+j" class="cell-text"></span>
               </div>
             </v-layout>
           </div>
         </v-layout>
+      </v-flex>
+
+      <!-- definizioni -->
+      <v-flex xs8>
+        <div>Horizontals</div>
+        <v-text-field v-for="(horizontalDef, i) in horizontals" :key="'horizontal-'+i"
+            :label="'Inserisci l\'orizzontale ' + (i+1)" @input="onDefinitionChange($event, horizontalDef, false)"
+        ></v-text-field>
+
+        <div>Verticals</div>
+        <v-text-field v-for="(verticalDef, i) in verticals" :key="'vertical-'+i"
+            :label="'Inserisci la verticale ' + (i+1)" @input="onDefinitionChange($event, verticalDef, true)"
+        ></v-text-field>
       </v-flex>
 
     </v-layout>
@@ -81,29 +101,55 @@
     },
 
     methods: {
+      onDefinitionChange(value, position, isVertical) {
+        console.log("changed", position);
+        const splitPos = position.split('-');
+        const x = parseInt(splitPos[0]);
+        const y = parseInt(splitPos[1]);
+
+        const $cruciverba = document.querySelector('.cruciverba');
+        for(let i = 0; i<value.length; ++i) {
+          const idQuery = isVertical ? `#cell-text-${(x + i)}-${y}` : `#cell-text-${(x)}-${y + i}`;
+          const $cell = $cruciverba.querySelector(idQuery);
+
+          if((isVertical && (x+i < this.cruciHeight && y < this.cruciWidth)) || 
+             (!isVertical && (y+i < this.cruciWidth && x < this.cruciHeight))) {
+            $cell.innerText = value[i];
+          } else {
+            console.warn("trying to write out of bound!");
+          }
+        }
+      },
+
       updateDefinitions() {
+        const $cruciverba = document.querySelector(".cruciverba");
         this.horizontals = [];
         this.verticals = [];
 
         for(let i=0; i<this.cruciHeight; ++i) {
           for(let j=0; j<this.cruciWidth; ++j) {
-            if(this.isHorizontalDef(i,j)) {
+            const isHor = this.isHorizontalDef(i,j);
+            const isVer = this.isVerticalDef(i,j);
+
+            if(isHor) {
               this.horizontals.push(i+"-"+j);
             }
-            if(this.isVerticalDef(i,j)) {
+            if(isVer) {
               this.verticals.push(i+"-"+j);
+            }
+            if(!isHor && !isVer) {
+              $cruciverba.querySelector(`#cell-definition-${i}-${j}`).innerText = "";
             }
           }
         }
 
         console.log(this.horizontals, this.verticals);
-        const $cruciverba = document.querySelector(".cruciverba");
         this.horizontals.forEach((val, i) => {
-          const cell = $cruciverba.querySelector(".cell-" + val);
+          const cell = $cruciverba.querySelector(`#cell-definition-${val}`);
           cell.innerText = i+1;
         });
         this.verticals.forEach((val, i) => {
-          const cell = $cruciverba.querySelector(".cell-" + val);
+          const cell = $cruciverba.querySelector(`#cell-definition-${val}`);
           cell.innerText = i+1;
         });
 
@@ -133,11 +179,13 @@
       },
       
       onCellClick(i, j) {
+        const pos = i+'-'+j;
         const newRow = this.scheme[i].slice(0);
-        newRow[j] = this.scheme[i][j] === null ? (i+'-'+j) : null;
+        newRow[j] = this.scheme[i][j] === null ? pos : null;
         this.$set(this.scheme, i, newRow);
 
         setTimeout(this.updateDefinitions, 250);
+        setTimeout(this.onDefinitionChange.bind(this, " ", pos, false), 500);
       },
 
       clearWord() {
@@ -185,7 +233,8 @@
     created() {
       this.dictionary = dictIta.dictionary;
       this.updateCruci();
-    }
+      setTimeout( () => this.updateDefinitions(), 500 );
+    },
   }
 </script>
 
@@ -195,6 +244,7 @@
     width: 50px;
     margin: 1px;
     background: #ccc;
+    position: relative;
   }
   .cell-black {
     background: #333;
@@ -207,6 +257,19 @@
   }
   .cell-definition-vertical.cell-definition-horizontal {
     background: cyan;
+  }
+
+  .cell-definition {
+    position: absolute;
+    top: 1px;
+    left: 3px;
+  }
+
+  .cell-text {
+    position: absolute;
+    font-size: 24px;
+    top: 6px;
+    left: 18px;
   }
 
 </style>
