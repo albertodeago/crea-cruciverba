@@ -64,6 +64,17 @@
         </v-layout>
       </v-flex>
 
+      <v-flex xs8>
+        <div>Parole da mettere</div>
+        <v-text-field label="Inserisci una parola" v-model="addWordText"></v-text-field>
+        <v-btn @click="addWord">Conferma</v-btn>
+        <div v-for="(word, i) in wordsToInsert" :key="word + i">
+          {{ word }}
+          <v-icon @click="removeWord(word)">remove</v-icon>
+        </div>
+        <v-btn @click="createCruci">Crea cruciverba</v-btn>
+      </v-flex>
+
       <!-- definizioni -->
       <v-flex xs8>
         <div>Horizontals</div>
@@ -94,13 +105,87 @@
       cruciHeight: 6,
       scheme: [],
       horizontals: [],
-      verticals: []
+      verticals: [],
+
+      addWordText: "",
+      wordsToInsert: [],
+      createdCruci: []
     }),
 
     computed: {
     },
 
     methods: {
+      getRandom(min, max) {
+        min = Math.ceil(min);
+        max = Math.floor(max);
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+      },
+      addWord() {
+        this.wordsToInsert.push(this.addWordText);
+        this.addWordText = "";
+      },
+      removeWord(word) {
+        this.wordsToInsert.splice(this.wordsToInsert.indexOf(word), 1);
+      },
+      isHorDef(i, j, scheme) {
+        return scheme && scheme[i] && scheme[i][j] && !scheme[i][j-1] && scheme[i][j+1];
+      },
+      isVerDef(i, j, scheme) {
+        return (i === 0 && (scheme[i][j] && scheme[i+1] && scheme[i+1][j])) || 
+              (scheme && scheme[i] && scheme[i][j] && scheme[i-1] && !scheme[i-1][j]) && 
+              (scheme[i+1] && scheme[i+1][j]);
+      },
+      getDefPos(scheme) {
+        const hor = [];
+        const ver = [];
+
+        for(let i=0; i<this.cruciHeight; ++i) {
+          for(let j=0; j<this.cruciWidth; ++j) {
+            const isHor = this.isHorDef(i,j, scheme);
+            const isVer = this.isVerDef(i,j, scheme);
+
+            if(isHor) hor.push(i+"-"+j);
+            if(isVer) ver.push(i+"-"+j);
+          }
+        }
+
+        return {
+          h: hor,
+          v: ver
+        };
+      },
+      getPosLenghts(scheme, h, v) {
+        const defs = {};
+        h.forEach(pos => {
+          const splitPos = pos.split('-');
+          const x = parseInt(splitPos[0]), y = parseInt(splitPos[1]);
+          let l = 1;
+          while(scheme[y] && scheme[y][x+l] !== null && l < this.cruciHeight) {
+            ++l;
+          }
+          defs[pos] = l;
+        });
+
+        console.log(defs);
+      },
+      createCruci() {
+        const _scheme = this.scheme;
+        const amountOfBlack = Math.ceil((this.cruciWidth * this.cruciHeight) / 5 ); // 20%
+
+        for(let i = 0; i < amountOfBlack; ++i) {
+          const x = this.getRandom(0, this.cruciHeight -1 );
+          const y = this.getRandom(0, this.cruciWidth -1 );
+          _scheme[x][y] = null;
+        }
+
+        console.log(_scheme);
+        const defPositions = this.getDefPos(_scheme);
+        console.log(defPositions);
+
+        this.getPosLenghts(_scheme, defPositions.h, defPositions.v);
+      },
+
       onDefinitionChange(value, position, isVertical) {
         console.log("changed", position);
         const splitPos = position.split('-');
